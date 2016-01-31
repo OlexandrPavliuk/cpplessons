@@ -73,6 +73,7 @@ void connect(char** commands, int count)
     int commandPartsCount = 0;
 
     int pipefds[2 * numPipes];
+    FILE *newout;
 
     for (i = 0; i < (numPipes); i++)
     {
@@ -89,11 +90,16 @@ void connect(char** commands, int count)
             {
                 dup2(pipefds[j + 1], 1);                
             }
+            else
+            {
+                newout = freopen("./result.out", "w", stdout);
+                stdout = newout;
+            }
             
             if (command != 0 )
             {
                 dup2(pipefds[j-2], 0);                
-            }
+            }            
 
 
             for(i = 0; i < 2*numPipes; i++)
