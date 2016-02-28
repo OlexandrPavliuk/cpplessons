@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(SOURCE_EXE httpserver.cpp main.cpp)
 set(HEADER httpserver.h)
 
+set( Boost_USE_STATIC_LIBS OFF )
 find_package( Boost REQUIRED COMPONENTS system filesystem )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
