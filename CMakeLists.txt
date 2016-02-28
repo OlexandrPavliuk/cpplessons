@@ -6,7 +6,7 @@ set(SOURCE_EXE httpserver.cpp main.cpp)
 set(HEADER httpserver.h)
 
 set( Boost_USE_STATIC_LIBS OFF )
-find_package( Boost REQUIRED COMPONENTS system filesystem )
+find_package( Boost REQUIRED COMPONENTS system  )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 find_package (Threads)

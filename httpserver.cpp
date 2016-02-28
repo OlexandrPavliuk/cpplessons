@@ -1,7 +1,8 @@
 #include "httpserver.h"
 #include <fstream>
-#include <boost/filesystem.hpp>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 HttpServer::HttpServer(const std::string &address, unsigned short port, const std::string &directory) : 
     address_(address),
@@ -110,57 +111,48 @@ void HttpServer::WriteResponse(std::shared_ptr<boost::asio::ip::tcp::socket> soc
     boost::asio::streambuf streambuf;
     std::ostream response_stream(&streambuf);
     boost::system::error_code ec;
+
+    std::string fullPath = directory_ + "/" + requestPath;
     
-    std::ofstream log("/home/box/log.txt");
-
-    boost::filesystem::path root_path(directory_);
-    if(boost::filesystem::exists(root_path))    
+    struct stat sb;
+    if (stat(fullPath.c_str(), &sb) != -1)
     {
-        auto path = root_path;
-        path += requestPath;
-
-        log << "1\n";
-                 
-        if(boost::filesystem::exists(path)) 
-        {
-            log << "2\n";
-            
-            if(boost::filesystem::canonical(root_path) <= boost::filesystem::canonical(path)) 
-            {
-                log << "3\n";
-                
-                if(boost::filesystem::is_directory(path))
-                {
-                    log << "4\n";
-                    path+="/index.html";
-                }
-
-                if(boost::filesystem::exists(path) && boost::filesystem::is_regular_file(path)) 
-                {
-                    log << "5\n";
-                    size_t length = boost::filesystem::file_size(path);
-
-                    std::ifstream ifs;
-                    ifs.open(path.string(), std::ifstream::in | std::ios::binary);
-                        
-                    if(ifs) 
-                    {                                                        
-                        response_stream << "HTTP/1.0 200 OK\r\nContent-Length: " << length << "\r\nContent-Type:  text/html\r\n\r\n";
-                                                        
-                        std::vector<char> buffer;
-                        buffer.resize(length);                            
-                        
-                        ifs.read(&buffer[0], length);
-                        response_stream.write(&buffer[0], length);                        
-                        boost::asio::write(*socket, streambuf, ec);                        
-                        
-                        ifs.close();
-                        return;
-                    }
-                }
-            }
-        }
-    }
+        if (S_ISDIR(sb.st_mode))
+	{
+	    if (fullPath[fullPath.length() - 1] != '/')
+	    {
+	       fullPath += "/";
+	    }
+	    
+	    fullPath +="/index.html";
+	}
+	
+	if (stat(fullPath.c_str(), &sb) != -1)
+	{
+	    if (S_ISREG(sb.st_mode))
+	    {
+		size_t length = sb.st_size;
+		
+		std::ifstream ifs;
+		ifs.open(fullPath, std::ifstream::in | std::ios::binary);
+		    
+		if(ifs) 
+		{                                                        
+		    response_stream << "HTTP/1.0 200 OK\r\nContent-Length: " << length << "\r\nContent-Type:  text/html\r\n\r\n";
+						    
+		    std::vector<char> buffer;
+		    buffer.resize(length);                            
+		    
+		    ifs.read(&buffer[0], length);
+		    response_stream.write(&buffer[0], length);                        
+		    boost::asio::write(*socket, streambuf, ec);                        
+		    
+		    ifs.close();
+		    return;
+		}
+	    }
+	}
+    }               
         
     std::string notFound = "<html><head><title>Not Found</title></head><body>Not Found</body></html>";
     response_stream << "HTTP/1.0 404 NOT FOUND\r\nContent-Length: " << notFound.length() << "\r\nContent-Type: text/html\r\n\r\n";    
