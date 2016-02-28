@@ -110,6 +110,8 @@ void HttpServer::WriteResponse(std::shared_ptr<boost::asio::ip::tcp::socket> soc
     boost::asio::streambuf streambuf;
     std::ostream response_stream(&streambuf);
     boost::system::error_code ec;
+    
+    std::ofstream log("/home/box/log.txt");
 
     boost::filesystem::path root_path(directory_);
     if(boost::filesystem::exists(root_path))    
@@ -117,17 +119,25 @@ void HttpServer::WriteResponse(std::shared_ptr<boost::asio::ip::tcp::socket> soc
         auto path = root_path;
         path += requestPath;
 
+        log << "1\n";
+                 
         if(boost::filesystem::exists(path)) 
         {
+            log << "2\n";
+            
             if(boost::filesystem::canonical(root_path) <= boost::filesystem::canonical(path)) 
             {
+                log << "3\n";
+                
                 if(boost::filesystem::is_directory(path))
                 {
+                    log << "4\n";
                     path+="/index.html";
                 }
 
                 if(boost::filesystem::exists(path) && boost::filesystem::is_regular_file(path)) 
                 {
+                    log << "5\n";
                     size_t length = boost::filesystem::file_size(path);
 
                     std::ifstream ifs;
